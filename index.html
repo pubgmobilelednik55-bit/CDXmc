@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ZcVirtual Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #05080f;
+            --card: rgba(255, 255, 255, 0.05);
+            --accent: #3b82f6;
+            --neon-blue: #00d2ff;
+            --neon-purple: #9d50bb;
+            --text: #ffffff;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0; overflow: hidden;
+            background: radial-gradient(circle at top right, #1e293b, #05080f);
+            height: 100vh;
+        }
+
+        /* Oynalar uchun sistema */
+        .page {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10; padding: 20px; overflow-y: auto;
+        }
+        .page.active { transform: translateX(0); }
+        .main-page { transform: translateX(0); z-index: 5; }
+
+        /* Header */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-size: 1.4rem; font-weight: 800; background: linear-gradient(to right, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Dashboard Cards */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .card {
+            background: var(--card); border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; border-radius: 20px; backdrop-filter: blur(5px);
+            position: relative; overflow: hidden; transition: 0.3s;
+        }
+        .card:active { transform: scale(0.95); }
+        .card i { font-size: 1.5rem; margin-bottom: 10px; color: var(--accent); }
+        .card h2 { margin: 5px 0; font-size: 1.8rem; }
+        .card p { font-size: 0.75rem; color: #94a3b8; margin: 0; }
+        .card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--accent); opacity: 0.5; }
+
+        /* Buttons */
+        .btn-pro {
+            background: linear-gradient(45deg, var(--accent), var(--neon-purple));
+            border: none; color: white; padding: 15px; width: 100%; border-radius: 15px;
+            font-weight: bold; font-size: 1rem; margin-top: 20px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Sidebar/Menu Overlay */
+        .menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 200; display: none;
+        }
+        .sidebar {
+            position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+            background: #0f172a; z-index: 201; transition: 0.3s; padding: 30px 20px;
+        }
+        .sidebar.open { left: 0; }
+        .menu-item {
+            padding: 18px; margin-bottom: 10px; border-radius: 12px;
+            display: flex; align-items: center; gap: 15px; font-size: 1.1rem;
+            background: rgba(255,255,255,0.03); transition: 0.2s;
+        }
+        .menu-item:active { background: var(--accent); }
+
+        /* Back Button */
+        .back-btn { font-size: 1.2rem; margin-bottom: 20px; display: inline-block; color: var(--accent); }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate { animation: fadeIn 0.5s ease forwards; }
+
+        /* Maintenance */
+        #m-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="m-screen">
+    <i class="fa fa-tools" style="font-size: 4rem; color: var(--accent); margin-bottom: 20px;"></i>
+    <h1>Bot vaqtinchalik faol emas 🛠</h1>
+    <p>Tez orada qaytamiz!</p>
+</div>
+
+<!-- Sidebar -->
+<div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
+<div class="sidebar" id="sidebar">
+    <h2 class="logo">🚀 ZcVirtual</h2>
+    <div class="menu-item" onclick="openPage('page-bots')">🤖 Botlar bo'limi</div>
+    <div class="menu-item" onclick="openPage('page-profile')">👤 Mening profilim</div>
+    <div class="menu-item" onclick="openPage('page-coder')">👨‍💻 Coder haqida</div>
+    <div class="menu-item" onclick="openPage('page-billing')">💳 Hisob to'ldirish</div>
+    <div id="admin-link" style="display:none;" class="menu-item" onclick="openPage('page-admin')">⚡ Admin Panel</div>
+</div>
+
+<!-- Main Page -->
+<div class="header">
+    <i class="fa fa-bars-staggered" style="font-size: 1.5rem;" onclick="toggleMenu()"></i>
+    <span class="logo">ZcVirtual</span>
+    <i class="fa-regular fa-bell" style="font-size: 1.3rem;"></i>
+</div>
+
+<div class="container animate" style="padding: 20px;">
+    <h2 id="u-name">Salom! 👋</h2>
+    <button class="btn-pro" onclick="openPage('page-bots')">+ Yangi Bot yaratish 🚀</button>
+
+    <div class="grid">
+        <div class="card">
+            <i class="fa fa-users"></i>
+            <h2 id="s-users">0</h2>
+            <p>Yangi userlar 👥</p>
+        </div>
+        <div class="card">
+            <i class="fa fa-robot"></i>
+            <h2 id="s-bots">0</h2>
+            <p>Jami botlar 🤖</p>
+        </div>
+        <div class="card">
+            <i class="fa fa-chart-line"></i>
+            <h2 id="s-up">0</h2>
+            <p>Yangilanishlar 🔥</p>
+        </div>
+        <div class="card">
+            <i class="fa fa-wallet"></i>
+            <h2 id="s-bal">0</h2>
+            <p>Balans (so'm) 💰</p>
+        </div>
+    </div>
+</div>
+
+<!-- Page: Botlar -->
+<div id="page-bots" class="page">
+    <div class="back-btn" onclick="closePage()"><i class="fa fa-arrow-left"></i> Orqaga</div>
+    <h1>🤖 Botlar ro'yxati</h1>
+    <div style="background: var(--card); padding: 30px; border-radius: 20px; text-align: center;">
+        <i class="fa fa-box-open" style="font-size: 3rem; opacity: 0.3;"></i>
+        <p>Hozircha botlar qo'shilmadi ⚠️</p>
+    </div>
+</div>
+
+<!-- Page: Profil -->
+<div id="page-profile" class="page">
+    <div class="back-btn" onclick="closePage()"><i class="fa fa-arrow-left"></i> Orqaga</div>
+    <h1>👤 Profilim</h1>
+    <div class="card" style="width: 100%; margin-bottom: 20px;">
+        <p>Ismingiz: <b id="p-name">-</b></p>
+        <p>ID: <b id="p-id">-</b></p>
+        <p>Balans: <b id="p-bal">0 so'm</b></p>
+    </div>
+    <button class="btn-pro" onclick="window.location.href='https://t.me/CDXmc'">🛠 Texnik yordam</button>
+</div>
+
+<!-- Page: Coder -->
+<div id="page-coder" class="page" style="text-align: center;">
+    <div class="back-btn" style="float: left;" onclick="closePage()"><i class="fa fa-arrow-left"></i></div>
+    <br><br>
+    <div style="background: linear-gradient(var(--accent), var(--neon-purple)); width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+        <i class="fa fa-code" style="font-size: 2.5rem;"></i>
+    </div>
+    <h2>CDXmc coder 👨‍💻</h2>
+    <div class="card" style="text-align: left; line-height: 2;">
+        ✨ <b>Ism:</b> Abdulloh<br>
+        🎂 <b>Yosh:</b> 16<br>
+        📅 <b>Yil:</b> 2010<br>
+        🚀 <b>Tajriba:</b> 2yil+
+    </div>
+</div>
+
+<!-- Page: Admin -->
+<div id="page-admin" class="page">
+    <div class="back-btn" onclick="closePage()"><i class="fa fa-arrow-left"></i> Orqaga</div>
+    <h1>⚡ Admin Panel</h1>
+    <div class="menu-item" onclick="adminAction('money_plus')">➕ Pul qo'shish</div>
+    <div class="menu-item" onclick="adminAction('money_minus')">➖ Pul ayrish</div>
+    <div class="menu-item" onclick="adminAction('add_bot')">📦 Bot qo'shish (PHP)</div>
+    <div class="menu-item" onclick="adminAction('del_bot')">🗑 Bot o'chirish</div>
+    <div class="menu-item" onclick="toggleStatus()">🔴 Faollikni o'zgartirish</div>
+</div>
+
+<script>
+    let tg = window.Telegram.WebApp;
+    const ADMIN_ID = 8379904990;
+    const userId = tg.initDataUnsafe?.user?.id || 0;
+
+    function toggleMenu() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('overlay').style.display = 
+            document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
+    }
+
+    function openPage(id) {
+        document.getElementById(id).classList.add('active');
+        if(id === 'sidebar') toggleMenu();
+    }
+
+    function closePage() {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    }
+
+    async function init() {
+        const res = await fetch('/api/data');
+        const data = await res.json();
+
+        if(data.maintenance && userId !== ADMIN_ID) {
+            document.getElementById('m-screen').style.display = 'flex';
+        }
+
+        if(userId === ADMIN_ID) document.getElementById('admin-link').style.display = 'flex';
+
+        document.getElementById('u-name').innerText = `Salom, ${tg.initDataUnsafe?.user?.first_name || 'User'}! 👋`;
+        document.getElementById('s-users').innerText = Object.keys(data.users).length;
+        document.getElementById('s-bots').innerText = data.bots_market.length;
+        document.getElementById('s-bal').innerText = data.users[userId]?.balance || 0;
+        
+        // Profil uchun
+        document.getElementById('p-name').innerText = tg.initDataUnsafe?.user?.first_name;
+        document.getElementById('p-id').innerText = userId;
+        document.getElementById('p-bal').innerText = (data.users[userId]?.balance || 0) + " so'm";
+    }
+
+    async function toggleStatus() {
+        await fetch('/api/admin/toggle-status', {method: 'POST'});
+        tg.showAlert("Holat o'zgardi! 🔄");
+        location.reload();
+    }
+
+    init();
+    tg.expand();
+</script>
+</body>
+</html>
