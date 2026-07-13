@@ -283,11 +283,11 @@
         <p style="color: var(--text-muted); margin-top: 10px;">Tez orada qaytamiz. Noqulayliklar uchun uzr so'raymiz!</p>
     </div>
 
-    <!-- 👤 Profil qismi -->
+    <!-- 👤 Profil qismi (REAL-TIME YUKLANADI) -->
     <header>
-        <div class="avatar" id="user-avatar">U</div>
+        <div class="avatar" id="user-avatar">..</div>
         <div>
-            <h3 id="user-name">Foydalanuvchi</h3>
+            <h3 id="user-name">Yuklanmoqda...</h3>
             <p id="user-id-text" style="font-size: 12px; color: var(--text-muted);">ID: 00000000</p>
         </div>
     </header>
@@ -365,7 +365,7 @@
                 <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
                 <div>
                     <p style="color: var(--text-muted); font-size: 13px;">Daraja</p>
-                    <h4 style="font-size: 18px; color: var(--success);" id="prof-status">VIP Client</h4>
+                    <h4 style="font-size: 18px; color: var(--success);" id="prof-status">Client</h4>
                 </div>
             </div>
         </div>
@@ -374,11 +374,11 @@
     <!-- 📜 TARIX SAHIFA -->
     <div id="page-history" class="page">
         <div id="history-container">
-            <!-- Dinamik yoki bo'sh holat yuklanadi -->
+            <!-- Dinamik yuklanadi -->
         </div>
     </div>
 
-    <!-- 👑 ADMIN PANEL (Faqat Adminga ko'rinadi) -->
+    <!-- 👑 ADMIN PANEL -->
     <div id="page-admin" class="page">
         <h2 style="margin-bottom: 15px; color: #ffb703;"><i class="fa-solid fa-user-shield"></i> Admin Panel</h2>
         
@@ -438,30 +438,46 @@
         <a href="#" class="nav-item" id="nav-admin" style="display: none;" onclick="switchTab('admin', this)"><i class="fa-solid fa-user-gear"></i>Admin</a>
     </nav>
 
+    <!-- 🟢 SCRIPT (0 DAN REAL-TIME SOZLASH) -->
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Foydalanuvchi ma'lumotlari (Telegramdan olinadi, test rejimida dummy)
-        const user = tg.initDataUnsafe?.user || { id: 8379904990, username: "Zalsee" }; 
+        // TELEGRAM REAL-TIME USER MA'LUMOTLARI
+        const user = tg.initDataUnsafe?.user; 
         const API_URL = window.location.origin;
 
         let currentSelectedStars = 0;
         let currentSelectedPrice = 0;
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('user-name').innerText = user.username || "Foydalanuvchi";
+            // Agar foydalanuvchi Telegramdan kirmasa (oddiy brauzerda kirsa)
+            if (!user || !user.id) {
+                document.getElementById('user-name').innerText = "Noma'lum Profil";
+                document.getElementById('user-id-text').innerText = "ID: Aniqlanmadi";
+                document.getElementById('user-avatar').innerText = "?";
+                alert("Iltimos, ushbu ilovaga faqat Telegram bot orqali kiring!");
+                return;
+            }
+
+            // Real vaqtda kim kirsa, o'shaning profili yuklanadi
+            const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+            document.getElementById('user-name').innerText = fullName || user.username || "Foydalanuvchi";
             document.getElementById('user-id-text').innerText = "ID: " + user.id;
-            document.getElementById('user-avatar').innerText = (user.username || "U").substring(0,2).toUpperCase();
+            
+            let letter = (user.first_name || user.username || "U").substring(0, 1).toUpperCase();
+            document.getElementById('user-avatar').innerText = letter;
+
             initApp();
         });
 
         async function initApp() {
+            if (!user || !user.id) return;
             try {
                 const res = await fetch(`${API_URL}/api/init`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user.id, username: user.username })
+                    body: JSON.stringify({ user_id: user.id, username: user.username || user.first_name })
                 });
                 const data = await res.json();
 
@@ -473,18 +489,22 @@
                     return;
                 }
 
+                // Kirgan odamning o'z ma'lumotlari real vaqtda bazadan olinadi
                 document.getElementById('user-balance').innerText = data.user.balance.toLocaleString();
                 document.getElementById('prof-stars').innerText = data.user.total_bought + " Stars";
                 document.getElementById('prof-status').innerText = data.user.status;
 
+                // Admin panel faqat haqiqiy adminga ochiladi
                 if (data.isAdmin) {
                     document.getElementById('nav-admin').style.display = 'flex';
                     loadAdminStats();
+                } else {
+                    document.getElementById('nav-admin').style.display = 'none';
                 }
 
                 renderHistory(data.orders);
             } catch (err) {
-                console.error("Yuklashda xato:", err);
+                console.error("Ulanishda xato:", err);
             }
         }
 
@@ -539,6 +559,7 @@
         function closeModal() { document.getElementById('buy-modal').style.display = 'none'; }
 
         async function confirmPurchase() {
+            if (!user) return;
             closeModal();
             let tx = prompt("Chek Tranzaksiya ID sini kiriting:");
             if(!tx) return alert("Tranzaksiya ID majburiy!");
@@ -554,6 +575,7 @@
         }
 
         async function submitDeposit() {
+            if (!user) return;
             const amount = document.getElementById('dep-amount').value;
             const tx = document.getElementById('dep-tx').value;
             if(!amount || !tx) return alert("Barcha maydonlarni to'ldiring!");
@@ -575,6 +597,7 @@
         }
 
         async function loadAdminStats() {
+            if (!user) return;
             const res = await fetch(`${API_URL}/api/admin/stats`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -590,6 +613,7 @@
         }
 
         async function toggleSiteStatus() {
+            if (!user) return;
             const currentStatus = document.getElementById('btn-toggle-site').dataset.status === 'true';
             await fetch(`${API_URL}/api/admin/toggle-site`, {
                 method: 'POST',
@@ -600,6 +624,7 @@
         }
 
         async function manageBalance(action) {
+            if (!user) return;
             const targetId = document.getElementById('adm-target-id').value;
             const amount = document.getElementById('adm-amount').value;
             if(!targetId || !amount) return alert("ID va miqdorni kiriting!");
