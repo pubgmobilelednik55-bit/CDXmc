@@ -2,249 +2,620 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ZcVirtual Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FragStore - Stars Market</title>
+    <!-- Telegram Web App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- FontAwesome Ikonkalar uchun -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --bg: #05080f;
-            --card: rgba(255, 255, 255, 0.05);
-            --accent: #3b82f6;
-            --neon-blue: #00d2ff;
-            --neon-purple: #9d50bb;
-            --text: #ffffff;
+            --bg-color: #0a1128;
+            --card-bg: #001f54;
+            --accent-color: #00b4d8;
+            --text-color: #f8f9fa;
+            --text-muted: #94a3b8;
+            --success: #2ec4b6;
+            --danger: #e63946;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            margin: 0; overflow: hidden;
-            background: radial-gradient(circle at top right, #1e293b, #05080f);
-            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            padding-bottom: 80px;
         }
 
-        /* Oynalar uchun sistema */
-        .page {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg);
-            transform: translateX(100%);
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10; padding: 20px; overflow-y: auto;
-        }
-        .page.active { transform: translateX(0); }
-        .main-page { transform: translateX(0); z-index: 5; }
-
-        /* Header */
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 20px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
-            position: sticky; top: 0; z-index: 100;
-        }
-        .logo { font-size: 1.4rem; font-weight: 800; background: linear-gradient(to right, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* Dashboard Cards */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-        .card {
-            background: var(--card); border: 1px solid rgba(255,255,255,0.1);
-            padding: 20px; border-radius: 20px; backdrop-filter: blur(5px);
-            position: relative; overflow: hidden; transition: 0.3s;
-        }
-        .card:active { transform: scale(0.95); }
-        .card i { font-size: 1.5rem; margin-bottom: 10px; color: var(--accent); }
-        .card h2 { margin: 5px 0; font-size: 1.8rem; }
-        .card p { font-size: 0.75rem; color: #94a3b8; margin: 0; }
-        .card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--accent); opacity: 0.5; }
-
-        /* Buttons */
-        .btn-pro {
-            background: linear-gradient(45deg, var(--accent), var(--neon-purple));
-            border: none; color: white; padding: 15px; width: 100%; border-radius: 15px;
-            font-weight: bold; font-size: 1rem; margin-top: 20px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        /* 🎈 YUKLANISH SHARIKCHALARI */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease;
         }
 
-        /* Sidebar/Menu Overlay */
-        .menu-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 200; display: none;
+        .spinner {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        .sidebar {
-            position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-            background: #0f172a; z-index: 201; transition: 0.3s; padding: 30px 20px;
+
+        .bubble {
+            width: 18px;
+            height: 18px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            animation: bounce 0.6s infinite alternate;
         }
-        .sidebar.open { left: 0; }
-        .menu-item {
-            padding: 18px; margin-bottom: 10px; border-radius: 12px;
-            display: flex; align-items: center; gap: 15px; font-size: 1.1rem;
-            background: rgba(255,255,255,0.03); transition: 0.2s;
+
+        .bubble:nth-child(2) { animation-delay: 0.2s; }
+        .bubble:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            to { transform: translateY(-15px); opacity: 0.4; }
         }
-        .menu-item:active { background: var(--accent); }
 
-        /* Back Button */
-        .back-btn { font-size: 1.2rem; margin-bottom: 20px; display: inline-block; color: var(--accent); }
+        /* 🛠️ TEXNIK ISHLAR SADOSI */
+        #maintenance {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 9998;
+        }
 
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate { animation: fadeIn 0.5s ease forwards; }
+        /* ASOSIY HEADER */
+        header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(180deg, var(--card-bg) 0%, var(--bg-color) 100%);
+        }
 
-        /* Maintenance */
-        #m-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+        .avatar {
+            width: 55px;
+            height: 55px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.3);
+        }
+
+        /* BALANS KARTASI */
+        .balance-card {
+            background: var(--card-bg);
+            margin: 0 15px 20px 15px;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* STARS GRID */
+        .stars-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 0 15px;
+        }
+
+        .star-item {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 20px 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .star-item:active {
+            transform: scale(0.96);
+            border-color: var(--accent-color);
+        }
+
+        .star-item i {
+            font-size: 42px;
+            color: #ffb703;
+            margin-bottom: 12px;
+            text-shadow: 0 0 10px rgba(255, 183, 3, 0.4);
+        }
+
+        /* INPUTS & BUTTONS */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:active { opacity: 0.9; }
+
+        /* VIZUAL TABLAR */
+        .page { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* NAVIGATSIYA */
+        nav {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: #030712;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 900;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--accent-color);
+        }
+
+        .nav-item i { font-size: 20px; }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--bg-color);
+            width: 100%;
+            border-radius: 24px 24px 0 0;
+            padding: 25px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* TARIX VARIANTI */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state i { font-size: 48px; margin-bottom: 15px; }
+
+        .order-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--accent-color);
+        }
     </style>
 </head>
 <body>
 
-<div id="m-screen">
-    <i class="fa fa-tools" style="font-size: 4rem; color: var(--accent); margin-bottom: 20px;"></i>
-    <h1>Bot vaqtinchalik faol emas 🛠</h1>
-    <p>Tez orada qaytamiz!</p>
-</div>
-
-<!-- Sidebar -->
-<div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
-<div class="sidebar" id="sidebar">
-    <h2 class="logo">🚀 ZcVirtual</h2>
-    <div class="menu-item" onclick="openPage('page-bots')">🤖 Botlar bo'limi</div>
-    <div class="menu-item" onclick="openPage('page-profile')">👤 Mening profilim</div>
-    <div class="menu-item" onclick="openPage('page-coder')">👨‍💻 Coder haqida</div>
-    <div class="menu-item" onclick="openPage('page-billing')">💳 Hisob to'ldirish</div>
-    <div id="admin-link" style="display:none;" class="menu-item" onclick="openPage('page-admin')">⚡ Admin Panel</div>
-</div>
-
-<!-- Main Page -->
-<div class="header">
-    <i class="fa fa-bars-staggered" style="font-size: 1.5rem;" onclick="toggleMenu()"></i>
-    <span class="logo">ZcVirtual</span>
-    <i class="fa-regular fa-bell" style="font-size: 1.3rem;"></i>
-</div>
-
-<div class="container animate" style="padding: 20px;">
-    <h2 id="u-name">Salom! 👋</h2>
-    <button class="btn-pro" onclick="openPage('page-bots')">+ Yangi Bot yaratish 🚀</button>
-
-    <div class="grid">
-        <div class="card">
-            <i class="fa fa-users"></i>
-            <h2 id="s-users">0</h2>
-            <p>Yangi userlar 👥</p>
+    <!-- 🎈 Yuklanish Oynasi -->
+    <div id="loader">
+        <div class="spinner">
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
         </div>
-        <div class="card">
-            <i class="fa fa-robot"></i>
-            <h2 id="s-bots">0</h2>
-            <p>Jami botlar 🤖</p>
+        <p style="color: var(--text-muted); font-size: 14px;">Yuklanmoqda...</p>
+    </div>
+
+    <!-- 🛠️ Texnik ishlar Oynasi -->
+    <div id="maintenance">
+        <i class="fa-solid fa-screwdriver-wrench" style="font-size: 64px; color: var(--accent-color); margin-bottom: 20px;"></i>
+        <h2>Sayt tamirlanmoqda</h2>
+        <p style="color: var(--text-muted); margin-top: 10px;">Tez orada qaytamiz. Noqulayliklar uchun uzr so'raymiz!</p>
+    </div>
+
+    <!-- 👤 Profil qismi -->
+    <header>
+        <div class="avatar" id="user-avatar">U</div>
+        <div>
+            <h3 id="user-name">Foydalanuvchi</h3>
+            <p id="user-id-text" style="font-size: 12px; color: var(--text-muted);">ID: 00000000</p>
         </div>
-        <div class="card">
-            <i class="fa fa-chart-line"></i>
-            <h2 id="s-up">0</h2>
-            <p>Yangilanishlar 🔥</p>
+    </header>
+
+    <!-- 🏠 ASOSIY SAHIFA -->
+    <div id="page-home" class="page active">
+        <div class="balance-card">
+            <div>
+                <p style="font-size: 13px; color: var(--text-muted); text-transform: uppercase;">Hamyon balansi</p>
+                <h2 style="font-size: 28px; margin-top: 5px;"><span id="user-balance">0</span> <span style="font-size: 16px; color: var(--accent-color);">so'm</span></h2>
+            </div>
+            <button onclick="switchTab('deposit')" style="background: var(--accent-color); border: none; width: 40px; height: 40px; border-radius: 50%; color: white; font-size: 20px;"><i class="fa-solid fa-plus"></i></button>
         </div>
-        <div class="card">
-            <i class="fa fa-wallet"></i>
-            <h2 id="s-bal">0</h2>
-            <p>Balans (so'm) 💰</p>
+
+        <div class="stars-grid">
+            <div class="star-item" onclick="openBuyModal(50, 15500)">
+                <i class="fa-solid fa-star"></i>
+                <h3>50 Stars</h3>
+                <p style="color: var(--accent-color); font-size: 14px; margin-top: 5px;">15 500 so'm</p>
+            </div>
+            <div class="star-item" onclick="openBuyModal(100, 31000)">
+                <i class="fa-solid fa-star"></i>
+                <h3>100 Stars</h3>
+                <p style="color: var(--accent-color); font-size: 14px; margin-top: 5px;">31 000 so'm</p>
+            </div>
+            <div class="star-item" onclick="openBuyModal(250, 77500)">
+                <i class="fa-solid fa-star"></i>
+                <h3>250 Stars</h3>
+                <p style="color: var(--accent-color); font-size: 14px; margin-top: 5px;">77 500 so'm</p>
+            </div>
+            <div class="star-item" onclick="openBuyModal(500, 155000)">
+                <i class="fa-solid fa-star"></i>
+                <h3>500 Stars</h3>
+                <p style="color: var(--accent-color); font-size: 14px; margin-top: 5px;">155 000 so'm</p>
+            </div>
+            <div class="star-item" onclick="openBuyModal(1000, 310000)">
+                <i class="fa-solid fa-star"></i>
+                <h3>1000 Stars</h3>
+                <p style="color: var(--accent-color); font-size: 14px; margin-top: 5px;">310 000 so'm</p>
+            </div>
+            <div class="star-item" onclick="openCustomModal()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <h3>Boshqa miqdor</h3>
+                <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">Ixtiyoriy</p>
+            </div>
+        </div>
+    </div><!-- 💳 TO'LDIRISH SAHIFA -->
+    <div id="page-deposit" class="page">
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 14px;">To'lov uchun karta raqami (Humo)</p>
+            <h3 style="color: var(--accent-color); font-size: 20px; margin: 10px 0; letter-spacing: 1px;" id="card-display">9860 0803 3246 1054</h3>
+            <button onclick="navigator.clipboard.writeText('9860080332461054'); alert('Karta nusxalandi!')" style="background: rgba(255,255,255,0.05); border: none; padding: 6px 12px; border-radius: 6px; color: white; font-size: 12px;"><i class="fa-solid fa-copy"></i> Nusxalash</button>
+        </div>
+
+        <div class="input-group">
+            <label>To'langan miqdor (so'm)</label>
+            <input type="number" id="dep-amount" placeholder="Masalan: 50000">
+        </div>
+        <div class="input-group">
+            <label>Chek Tranzaksiya ID si</label>
+            <input type="text" id="dep-tx" placeholder="Tranzaksiya raqami yoki chek kodi">
+        </div>
+        <button class="btn" onclick="submitDeposit()"><i class="fa-solid fa-paper-plane"></i> To'lov so'rovini yuborish</button>
+    </div>
+
+    <!-- 👤 KABINET SAHIFA -->
+    <div id="page-profile" class="page">
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 16px; text-align: center;">
+            <h3 style="margin-bottom: 15px;">Mening Profilim</h3>
+            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                <div>
+                    <p style="color: var(--text-muted); font-size: 13px;">Sotib olindi</p>
+                    <h4 style="font-size: 18px; color: #ffb703;" id="prof-stars">0 Stars</h4>
+                </div>
+                <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+                <div>
+                    <p style="color: var(--text-muted); font-size: 13px;">Daraja</p>
+                    <h4 style="font-size: 18px; color: var(--success);" id="prof-status">VIP Client</h4>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Page: Botlar -->
-<div id="page-bots" class="page">
-    <div class="back-btn" onclick="closePage()"><i class="fa fa-arrow-left"></i> Orqaga</div>
-    <h1>🤖 Botlar ro'yxati</h1>
-    <div style="background: var(--card); padding: 30px; border-radius: 20px; text-align: center;">
-        <i class="fa fa-box-open" style="font-size: 3rem; opacity: 0.3;"></i>
-        <p>Hozircha botlar qo'shilmadi ⚠️</p>
+    <!-- 📜 TARIX SAHIFA -->
+    <div id="page-history" class="page">
+        <div id="history-container">
+            <!-- Dinamik yoki bo'sh holat yuklanadi -->
+        </div>
     </div>
-</div>
 
-<!-- Page: Profil -->
-<div id="page-profile" class="page">
-    <div class="back-btn" onclick="closePage()"><i class="fa fa-arrow-left"></i> Orqaga</div>
-    <h1>👤 Profilim</h1>
-    <div class="card" style="width: 100%; margin-bottom: 20px;">
-        <p>Ismingiz: <b id="p-name">-</b></p>
-        <p>ID: <b id="p-id">-</b></p>
-        <p>Balans: <b id="p-bal">0 so'm</b></p>
+    <!-- 👑 ADMIN PANEL (Faqat Adminga ko'rinadi) -->
+    <div id="page-admin" class="page">
+        <h2 style="margin-bottom: 15px; color: #ffb703;"><i class="fa-solid fa-user-shield"></i> Admin Panel</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 12px;">
+                <p style="font-size: 12px; color: var(--text-muted);">Jami a'zolar</p>
+                <h3 id="adm-users" style="font-size: 20px;">0 ta</h3>
+            </div>
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 12px;">
+                <p style="font-size: 12px; color: var(--text-muted);">Kutilayotganlar</p>
+                <h3 id="adm-orders" style="font-size: 20px;">0 ta</h3>
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Bot holati (On/Off):</span>
+            <button id="btn-toggle-site" class="btn" style="width: auto; padding: 8px 16px;" onclick="toggleSiteStatus()">Yoqilgan</button>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 15px; border-radius: 12px;">
+            <h4 style="margin-bottom: 10px;">Foydalanuvchi balansini boshqarish</h4>
+            <div class="input-group">
+                <input type="number" id="adm-target-id" placeholder="Foydalanuvchi Telegram ID">
+            </div>
+            <div class="input-group">
+                <input type="number" id="adm-amount" placeholder="Miqdor (so'm)">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="background: var(--success);" onclick="manageBalance('add')">Qo'shish</button>
+                <button class="btn" style="background: var(--danger);" onclick="manageBalance('sub')">Ayirish</button>
+            </div>
+        </div>
     </div>
-    <button class="btn-pro" onclick="window.location.href='https://t.me/CDXmc'">🛠 Texnik yordam</button>
-</div>
 
-<!-- Page: Coder -->
-<div id="page-coder" class="page" style="text-align: center;">
-    <div class="back-btn" style="float: left;" onclick="closePage()"><i class="fa fa-arrow-left"></i></div>
-    <br><br>
-    <div style="background: linear-gradient(var(--accent), var(--neon-purple)); width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-        <i class="fa fa-code" style="font-size: 2.5rem;"></i>
+    <!-- 📦 SOTIB OLISH MODAL -->
+    <div class="modal" id="buy-modal">
+        <div class="modal-content">
+            <h3 id="modal-title" style="margin-bottom: 10px;">50 Stars</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Sotib olish uchun hisobingizda yetarli mablag' bo'lishi kerak.</p>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold;">
+                <span>Jami narxi:</span>
+                <span id="modal-price" style="color: #ffb703;">15 500 so'm</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="background: #334155;" onclick="closeModal()">Yopish</button>
+                <button class="btn" id="btn-confirm-buy" onclick="confirmPurchase()">Sotib olish</button>
+            </div>
+        </div>
     </div>
-    <h2>CDXmc coder 👨‍💻</h2>
-    <div class="card" style="text-align: left; line-height: 2;">
-        ✨ <b>Ism:</b> Abdulloh<br>
-        🎂 <b>Yosh:</b> 16<br>
-        📅 <b>Yil:</b> 2010<br>
-        🚀 <b>Tajriba:</b> 2yil+
-    </div>
-</div>
 
-<!-- Page: Admin -->
-<div id="page-admin" class="page">
-    <div class="back-btn" onclick="closePage()"><i class="fa fa-arrow-left"></i> Orqaga</div>
-    <h1>⚡ Admin Panel</h1>
-    <div class="menu-item" onclick="adminAction('money_plus')">➕ Pul qo'shish</div>
-    <div class="menu-item" onclick="adminAction('money_minus')">➖ Pul ayrish</div>
-    <div class="menu-item" onclick="adminAction('add_bot')">📦 Bot qo'shish (PHP)</div>
-    <div class="menu-item" onclick="adminAction('del_bot')">🗑 Bot o'chirish</div>
-    <div class="menu-item" onclick="toggleStatus()">🔴 Faollikni o'zgartirish</div>
-</div>
+    <!-- 🧭 NAVIGATSIYA -->
+    <nav>
+        <a href="#" class="nav-item active" onclick="switchTab('home', this)"><i class="fa-solid fa-house"></i>Asosiy</a>
+        <a href="#" class="nav-item" onclick="switchTab('deposit', this)"><i class="fa-solid fa-wallet"></i>To'ldirish</a>
+        <a href="#" class="nav-item" onclick="switchTab('profile', this)"><i class="fa-solid fa-user"></i>Kabinet</a>
+        <a href="#" class="nav-item" onclick="switchTab('history', this)"><i class="fa-solid fa-history"></i>Tarix</a>
+        <a href="#" class="nav-item" id="nav-admin" style="display: none;" onclick="switchTab('admin', this)"><i class="fa-solid fa-user-gear"></i>Admin</a>
+    </nav>
 
-<script>
-    let tg = window.Telegram.WebApp;
-    const ADMIN_ID = 8379904990;
-    const userId = tg.initDataUnsafe?.user?.id || 0;
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-    function toggleMenu() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').style.display = 
-            document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
-    }
+        // Foydalanuvchi ma'lumotlari (Telegramdan olinadi, test rejimida dummy)
+        const user = tg.initDataUnsafe?.user || { id: 8379904990, username: "Zalsee" }; 
+        const API_URL = window.location.origin;
 
-    function openPage(id) {
-        document.getElementById(id).classList.add('active');
-        if(id === 'sidebar') toggleMenu();
-    }
+        let currentSelectedStars = 0;
+        let currentSelectedPrice = 0;
 
-    function closePage() {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    }
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('user-name').innerText = user.username || "Foydalanuvchi";
+            document.getElementById('user-id-text').innerText = "ID: " + user.id;
+            document.getElementById('user-avatar').innerText = (user.username || "U").substring(0,2).toUpperCase();
+            initApp();
+        });
 
-    async function init() {
-        const res = await fetch('/api/data');
-        const data = await res.json();
+        async function initApp() {
+            try {
+                const res = await fetch(`${API_URL}/api/init`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id, username: user.username })
+                });
+                const data = await res.json();
 
-        if(data.maintenance && userId !== ADMIN_ID) {
-            document.getElementById('m-screen').style.display = 'flex';
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 400);
+
+                if (data.maintenance) {
+                    document.getElementById('maintenance').style.display = 'flex';
+                    return;
+                }
+
+                document.getElementById('user-balance').innerText = data.user.balance.toLocaleString();
+                document.getElementById('prof-stars').innerText = data.user.total_bought + " Stars";
+                document.getElementById('prof-status').innerText = data.user.status;
+
+                if (data.isAdmin) {
+                    document.getElementById('nav-admin').style.display = 'flex';
+                    loadAdminStats();
+                }
+
+                renderHistory(data.orders);
+            } catch (err) {
+                console.error("Yuklashda xato:", err);
+            }
         }
 
-        if(userId === ADMIN_ID) document.getElementById('admin-link').style.display = 'flex';
+        function renderHistory(orders) {
+            const container = document.getElementById('history-container');
+            if (!orders || orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <h3>Buyurtmalar tarixi yo'q</h3>
+                        <p style="font-size: 14px; margin-top:5px;">Siz hali buyurtma bermagansiz.</p>
+                    </div>`;
+            } else {
+                container.innerHTML = '<h3 style="margin-bottom:15px;">Buyurtmalar tarixi</h3>';
+                orders.forEach(o => {
+                    container.innerHTML += `
+                        <div class="order-card">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                <strong>⭐ ${o.stars} Stars</strong>
+                                <span style="color: ${o.status === 'Qabul qilindi' ? 'var(--success)' : o.status === 'Rad etildi' ? 'var(--danger)' : '#ffb703'}">${o.status}</span>
+                            </div>
+                            <p style="font-size:12px; color: var(--text-muted);">${new Date(o.date).toLocaleString()}</p>
+                            <p style="font-size:13px; margin-top:5px;">To'lov: ${o.amount.toLocaleString()} so'm</p>
+                        </div>`;
+                });
+            }
+        }
 
-        document.getElementById('u-name').innerText = `Salom, ${tg.initDataUnsafe?.user?.first_name || 'User'}! 👋`;
-        document.getElementById('s-users').innerText = Object.keys(data.users).length;
-        document.getElementById('s-bots').innerText = data.bots_market.length;
-        document.getElementById('s-bal').innerText = data.users[userId]?.balance || 0;
-        
-        // Profil uchun
-        document.getElementById('p-name').innerText = tg.initDataUnsafe?.user?.first_name;
-        document.getElementById('p-id').innerText = userId;
-        document.getElementById('p-bal').innerText = (data.users[userId]?.balance || 0) + " so'm";
-    }
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`page-${tabId}`).classList.add('active');
+            if(el) el.classList.add('active');
+        }
 
-    async function toggleStatus() {
-        await fetch('/api/admin/toggle-status', {method: 'POST'});
-        tg.showAlert("Holat o'zgardi! 🔄");
-        location.reload();
-    }
+        function openBuyModal(stars, price) {
+            currentSelectedStars = stars;
+            currentSelectedPrice = price;
+            document.getElementById('modal-title').innerText = `${stars} Stars sotib olish`;
+            document.getElementById('modal-price').innerText = `${price.toLocaleString()} so'm`;
+            document.getElementById('buy-modal').style.display = 'flex';
+        }
 
-    init();
-    tg.expand();
-</script>
+        function openCustomModal() {
+            let stars = prompt("Stars miqdorini kiriting:");
+            if(stars && !isNaN(stars) && stars > 0) {
+                let price = stars * 310;
+                openBuyModal(parseInt(stars), price);
+            }
+        }
+
+        function closeModal() { document.getElementById('buy-modal').style.display = 'none'; }
+
+        async function confirmPurchase() {
+            closeModal();
+            let tx = prompt("Chek Tranzaksiya ID sini kiriting:");
+            if(!tx) return alert("Tranzaksiya ID majburiy!");
+            try {
+                const res = await fetch(`${API_URL}/api/order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id, amount: currentSelectedPrice, stars: currentSelectedStars, tx_id: tx })
+                });
+                const data = await res.json();
+                if(data.success) { alert("Buyurtma adminga yuborildi!"); initApp(); }
+            } catch(e) { alert("Xatolik!"); }
+        }
+
+        async function submitDeposit() {
+            const amount = document.getElementById('dep-amount').value;
+            const tx = document.getElementById('dep-tx').value;
+            if(!amount || !tx) return alert("Barcha maydonlarni to'ldiring!");
+            let starsCalculated = Math.floor(amount / 310);
+            try {
+                const res = await fetch(`${API_URL}/api/order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id, amount: amount, stars: starsCalculated, tx_id: tx })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert("To'lov so'rovi yuborildi!");
+                    document.getElementById('dep-amount').value = '';
+                    document.getElementById('dep-tx').value = '';
+                    initApp(); switchTab('home');
+                }
+            } catch (e) { alert("Xatolik!"); }
+        }
+
+        async function loadAdminStats() {
+            const res = await fetch(`${API_URL}/api/admin/stats`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_id: user.id })
+            });
+            const data = await res.json();
+            document.getElementById('adm-users').innerText = data.total_users + " ta";
+            document.getElementById('adm-orders').innerText = data.pending_orders + " ta";
+            const btn = document.getElementById('btn-toggle-site');
+            if(data.site_status) { btn.innerText = "Yoqilgan (ON)"; btn.style.background = "var(--success)"; }
+            else { btn.innerText = "O'chirilgan (OFF)"; btn.style.background = "var(--danger)"; }
+            btn.dataset.status = data.site_status;
+        }
+
+        async function toggleSiteStatus() {
+            const currentStatus = document.getElementById('btn-toggle-site').dataset.status === 'true';
+            await fetch(`${API_URL}/api/admin/toggle-site`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_id: user.id, status: !currentStatus })
+            });
+            alert("Bot holati o'zgartirildi!"); loadAdminStats();
+        }
+
+        async function manageBalance(action) {
+            const targetId = document.getElementById('adm-target-id').value;
+            const amount = document.getElementById('adm-amount').value;
+            if(!targetId || !amount) return alert("ID va miqdorni kiriting!");
+            const res = await fetch(`${API_URL}/api/admin/manage-balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_id: user.id, target_user_id: targetId, action: action, amount: amount })
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("Muvaffaqiyatli bajarildi!");
+                document.getElementById('adm-target-id').value = '';
+                document.getElementById('adm-amount').value = '';
+                initApp();
+            } else { alert("Foydalanuvchi topilmadi!"); }
+        }
+    </script>
 </body>
-</html>
+    </html>
