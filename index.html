@@ -344,8 +344,7 @@
     </style>
 </head>
 <body class="anim-active" data-theme="dark">
-
-    <div id="loader">
+        <div id="loader">
         <div class="spinner">
             <div class="bubble"></div>
             <div class="bubble"></div>
@@ -409,7 +408,9 @@
                 <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px;">Boshqa miqdor</p>
             </div>
         </div>
-    </div>    <div id="page-deposit" class="page">
+    </div>
+
+    <div id="page-deposit" class="page">
         <div style="background: var(--card-bg); padding: 22px; border-radius: 18px; margin-bottom: 20px; text-align: center; border: 1px solid var(--border-glow);">
             <p style="color: var(--text-muted); font-size: 13px; text-transform: uppercase; font-weight: bold;">To'lov uchun Humo karta</p>
             <h3 style="color: var(--accent-color); font-size: 22px; margin: 12px 0; letter-spacing: 1.5px; font-weight: 800;" id="card-display">4916 9903 5554 3858</h3>
@@ -443,7 +444,7 @@
                 <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
                 <div>
                     <p style="color: var(--text-muted); font-size: 12px;">Mijoz darajasi</p>
-                    <h4 style="font-size: 18px; color: var(--success;); margin-top: 4px;" id="prof-status-text">Client</h4>
+                    <h4 style="font-size: 18px; color: var(--success);" id="prof-status-text">Client</h4>
                 </div>
             </div>
         </div>
@@ -539,9 +540,7 @@
         <a href="#" class="nav-item" onclick="switchTab('profile', this)"><i class="fa-solid fa-user"></i>Kabinet</a>
         <a href="#" class="nav-item" onclick="switchTab('history', this)"><i class="fa-solid fa-history"></i>Tarix</a>
         <a href="#" class="nav-item" id="nav-admin" style="display: none;" onclick="switchTab('admin', this)"><i class="fa-solid fa-user-gear"></i>Admin</a>
-    </nav>
-
-    <script>
+            </nav>    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -587,7 +586,7 @@
             document.getElementById('prof-user-id').innerText = "ID: " + user.id;
             document.getElementById('prof-username').innerText = user.username ? "Username: @" + user.username : "Username: @yo'q";
 
-            // 🛑 MAJBURIY 3 SONIYALIK YUKLANISH VA ISHLATISH (3000ms keyin kiradi)
+            // 🛑 MAJBURIY 3 SONIYALIK YUKLANISH (3000ms kutib kiradi)
             setTimeout(() => {
                 initApp();
             }, 3000);
@@ -687,7 +686,7 @@
 
         function closeModal() { document.getElementById('buy-modal').style.display = 'none'; }
 
-        // ⭐ HISOBDAN STARS SOTIB OLISH (REAL-TIME TEKSHIRUV BILAN)
+        // ⭐ HISOBDAN STARS SOTIB OLISH (REAL-TIME BALANS TEKSHIRUVI BILAN)
         async function confirmPurchase() {
             if (!user) return;
             const targetUser = document.getElementById('target-username').value;
@@ -776,5 +775,65 @@
             document.getElementById('adm-users').innerText = data.total_users + " ta";
             document.getElementById('adm-orders').innerText = data.pending_orders + " ta";
             const btn = document.getElementById('btn-toggle-site');
-            if(data.site_status) { btn.innerText = "Yoqilgan (ON)"; btn.style.background = "var
+            if(data.site_status) { btn.innerText = "Yoqilgan (ON)"; btn.style.background = "var(--success)"; btn.style.color = "white"; }
+            else { btn.innerText = "O'chirilgan (OFF)"; btn.style.background = "var(--danger)"; btn.style.color = "white"; }
+            btn.dataset.status = data.site_status;
+        }
+
+        async function toggleSiteStatus() {
+            if (!user) return;
+            const currentStatus = document.getElementById('btn-toggle-site').dataset.status === 'true';
+            await fetch(`${API_URL}/api/admin/toggle-site`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_id: user.id, status: !currentStatus })
+            });
+            alert("Bot holati o'zgartirildi!"); loadAdminStats();
+        }
+
+        async function manageBalance(action) {
+            if (!user) return;
+            const targetId = document.getElementById('adm-target-id').value;
+            const amount = document.getElementById('adm-amount').value;
+            if(!targetId || !amount) return alert("ID va miqdorni kiriting!");
+            const res = await fetch(`${API_URL}/api/admin/manage-balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_id: user.id, target_user_id: targetId, action: action, amount: amount })
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("Balans muvaffaqiyatli yangilandi!");
+                document.getElementById('adm-target-id').value = '';
+                document.getElementById('adm-amount').value = '';
+                initApp();
+            } else { alert("Xatolik! Foydalanuvchi topilmagan bo'lishi mumkin."); }
+        }
+
+        // 📢 GLOBAL REKLAMA TARQATISH
+        async function sendBroadcast() {
+            if (!user) return;
+            const msg = document.getElementById('adm-broadcast-msg').value;
+            if (!msg) return alert("Xabar matnini kiriting!");
+            if (!confirm("Haqiqatan ham barcha foydalanuvchilarga ushbu xabarni tarqatmoqchimisiz?")) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/admin/broadcast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_id: user.id, message: msg })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert(`Xabar muvaffaqiyatli tarqatildi! Jami yuborildi: ${data.sent_count} ta foydalanuvchiga.`);
+                    document.getElementById('adm-broadcast-msg').value = '';
+                }
+            } catch(e) {
+                alert("Xabar tarqatishda xatolik yuz berdi!");
+            }
+        }
+    </script>
+</body>
+    </html>
     
+            
