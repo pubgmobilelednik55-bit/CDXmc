@@ -1,24 +1,14 @@
 {
-  "name": "fragstore-mini-app",
-  "version": "1.1.0",
-  "description": "FragStore Stars Market Telegram Mini App",
+  "name": "also-ai-app",
+  "version": "1.0.0",
+  "description": "AlsoAI Telegram Mini App and Bot",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [
-    "telegram",
-    "mini-app",
-    "stars",
-    "market",
-    "express",
-    "bot"
-  ],
-  "author": "Muhammadaziz",
-  "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "node-telegram-bot-api": "^0.66.0"
+    "@google/genai": "^0.1.1",
+    "grammy": "^1.20.0",
+    "express": "^4.19.2"
   }
 }
